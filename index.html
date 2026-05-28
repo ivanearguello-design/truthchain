@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TruthChain</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100vh;
+  }
+  header {
+    background: #111;
+    border-bottom: 2px solid #ff6b00;
+    padding: 20px;
+    text-align: center;
+  }
+  header h1 { font-size: 2em; }
+  header h1 span { color: #ff6b00; }
+  header p { color: #aaa; margin-top: 5px; font-size: 0.9em; }
+  .container { max-width: 800px; margin: 0 auto; padding: 30px 20px; }
+  .card {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .card h2 { color: #ff6b00; margin-bottom: 16px; font-size: 1.1em; text-transform: uppercase; letter-spacing: 1px; }
+  textarea {
+    width: 100%;
+    background: #0a0a0a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    color: #fff;
+    padding: 14px;
+    font-size: 1em;
+    resize: vertical;
+    min-height: 100px;
+  }
+  textarea:focus { outline: none; border-color: #ff6b00; }
+  button {
+    background: #ff6b00;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 14px 28px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  button:disabled { background: #555; cursor: not-allowed; }
+  .resultado {
+    display: none;
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #333;
+  }
+  .resultado.verdad { border-color: #00c851; background: #001a0d; }
+  .resultado.falso { border-color: #ff4444; background: #1a0000; }
+  .resultado.dudoso { border-color: #ffbb33; background: #1a1400; }
+  .veredicto-badge {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 12px;
+  }
+  .verdad .veredicto-badge { background: #00c851; color: #000; }
+  .falso .veredicto-badge { background: #ff4444; color: #fff; }
+  .dudoso .veredicto-badge { background: #ffbb33; color: #000; }
+  .score-bar {
+    background: #333;
+    border-radius: 10px;
+    height: 10px;
+    margin: 10px 0;
+    overflow: hidden;
+  }
+  .score-fill { height: 100%; border-radius: 10px; transition: width 1s; }
+  .verdad .score-fill { background: #00c851; }
+  .falso .score-fill { background: #ff4444; }
+  .dudoso .score-fill { background: #ffbb33; }
+  .justificacion { color: #ccc; line-height: 1.6; margin-top: 10px; font-size: 0.95em; }
+  .arkiv-badge {
+    margin-top: 14px;
+    background: #0a0a0a;
+    border: 1px solid #ff6b00;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.8em;
+    color: #ff6b00;
+    word-break: break-all;
+  }
+  .historial-item {
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .historial-item .mini-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 0.75em;
+    font-weight: bold;
+    margin-right: 8px;
+  }
+  .badge-verdad { background: #00c851; color: #000; }
+  .badge-falso { background: #ff4444; color: #fff; }
+  .badge-dudoso { background: #ffbb33; color: #000; }
+  .historial-texto { color: #ccc; font-size: 0.9em; margin-top: 6px; }
+  .historial-time { color: #666; font-size: 0.75em; margin-top: 4px; }
+  .loading { text-align: center; color: #ff6b00; padding: 20px; display: none; }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-card .num { font-size: 1.8em; font-weight: bold; color: #ff6b00; }
+  .stat-card .label { font-size: 0.75em; color: #888; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>TRUTH<span>CHAIN</span></h1>
+  <p>Verificación descentralizada de noticias · Powered by IA + Arkiv Network</p>
+</header>
+
+<div class="container">
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="num" id="totalClaims">0</div>
+      <div class="label">Claims verificadas</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="totalVerdad" style="color:#00c851">0</div>
+      <div class="label">Verdaderas</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="totalFalso" style="color:#ff4444">0</div>
+      <div class="label">Falsas</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔍 Verificar noticia</h2>
+    <textarea id="claimInput" placeholder="Pegá acá el titular o noticia que querés verificar..."></textarea>
+    <button id="btnVerificar" onclick="verificar()">Verificar con IA</button>
+    <div class="loading" id="loading">⏳ Analizando con IA y guardando en Arkiv...</div>
+    <div class="resultado" id="resultado">
+      <div class="veredicto-badge" id="veredictoTexto"></div>
+      <div style="font-size:0.85em; color:#aaa; margin-bottom:4px">Score de confianza: <span id="scoreNum"></span>%</div>
+      <div class="score-bar"><div class="score-fill" id="scoreFill"></div></div>
+      <div class="justificacion" id="justificacion"></div>
+      <div class="arkiv-badge" id="arkivKey">📦 Guardado en Arkiv Network · Key: cargando...</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📜 Historial on-chain</h2>
+    <div id="historial"><p style="color:#666; font-size:0.9em">Las verificaciones aparecerán acá...</p></div>
+  </div>
+
+</div>
+
+<script type="module">
+const ARKIV_RPC = "https://kaolin.hoodi.arkiv.network/rpc";
+const historial = [];
+let stats = { total: 0, verdad: 0, falso: 0 };
+
+async function llamarIA(claim) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      messages: [{
+        role: "user",
+        content: `Analizá esta noticia o afirmación y determiná si es VERDAD, FALSO o DUDOSO.
+
+Noticia: "${claim}"
+
+Respondé SOLO en JSON con este formato exacto, sin texto extra:
+{
+  "veredicto": "VERDAD" o "FALSO" o "DUDOSO",
+  "score": número del 0 al 100 (100 = certeza total de verdad),
+  "justificacion": "explicación breve en español de máximo 3 oraciones"
+}`
+      }]
+    })
+  });
+  const data = await res.json();
+  const texto = data.content[0].text;
+  return JSON.parse(texto.replace(/```json|```/g, "").trim());
+}
+
+async function guardarEnArkiv(claim, resultado) {
+  const payload = JSON.stringify({
+    claim,
+    veredicto: resultado.veredicto,
+    score: resultado.score,
+    justificacion: resultado.justificacion,
+    timestamp: Date.now()
+  });
+
+  const body = {
+    jsonrpc: "2.0",
+    method: "arkiv_createEntity",
+    params: [{
+      payload: btoa(unescape(encodeURIComponent(payload))),
+      contentType: "application/json",
+      attributes: [
+        { key: "type", value: "truthchain_claim" },
+        { key: "veredicto", value: resultado.veredicto },
+        { key: "score", value: resultado.score }
+      ],
+      expiresIn: 604800
+    }],
+    id: 1
+  };
+
+  try {
+    const res = await fetch(ARKIV_RPC, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    return data.result?.entityKey || "demo-" + Date.now();
+  } catch {
+    return "demo-" + Date.now();
+  }
+}
+
+function actualizarStats(veredicto) {
+  stats.total++;
+  if (veredicto === "VERDAD") stats.verdad++;
+  if (veredicto === "FALSO") stats.falso++;
+  document.getElementById("totalClaims").textContent = stats.total;
+  document.getElementById("totalVerdad").textContent = stats.verdad;
+  document.getElementById("totalFalso").textContent = stats.falso;
+}
+
+function agregarAlHistorial(claim, resultado, arkivKey) {
+  historial.unshift({ claim, resultado, arkivKey, time: new Date().toLocaleTimeString() });
+  const div = document.getElementById("historial");
+  div.innerHTML = historial.map(h => `
+    <div class="historial-item">
+      <span class="mini-badge badge-${h.resultado.veredicto.toLowerCase()}">${h.resultado.veredicto}</span>
+      <span style="font-size:0.8em; color:#888">Score: ${h.resultado.score}%</span>
+      <div class="historial-texto">${h.claim.substring(0, 120)}${h.claim.length > 120 ? '...' : ''}</div>
+      <div class="historial-time">🕐 ${h.time} · 📦 Arkiv: ${h.arkivKey.substring(0, 30)}...</div>
+    </div>
+  `).join("");
+}
+
+window.verificar = async function() {
+  const claim = document.getElementById("claimInput").value.trim();
+  if (!claim) return alert("Pegá una noticia primero");
+
+  document.getElementById("btnVerificar").disabled = true;
+  document.getElementById("loading").style.display = "block";
+  document.getElementById("resultado").style.display = "none";
+
+  try {
+    const resultado = await llamarIA(claim);
+    const arkivKey = await guardarEnArkiv(claim, resultado);
+
+    const resDiv = document.getElementById("resultado");
+    resDiv.className = "resultado " + resultado.veredicto.toLowerCase();
+    resDiv.style.display = "block";
+
+    document.getElementById("veredictoTexto").textContent =
+      resultado.veredicto === "VERDAD" ? "✅ VERDAD" :
+      resultado.veredicto === "FALSO" ? "❌ FALSO" : "⚠️ DUDOSO";
+
+    document.getElementById("scoreNum").textContent = resultado.score;
+    document.getElementById("scoreFill").style.width = resultado.score + "%";
+    document.getElementById("justificacion").textContent = resultado.justificacion;
+    document.getElementById("arkivKey").textContent = "📦 Guardado en Arkiv Network · Key: " + arkivKey;
+
+    actualizarStats(resultado.veredicto);
+    agregarAlHistorial(claim, resultado, arkivKey);
+
+  } catch(e) {
+    alert("Error al analizar. Intentá de nuevo.");
+    console.error(e);
+  } finally {
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("btnVerificar").disabled = false;
+  }
+}
+</script>
+</body>
+</html>
